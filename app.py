@@ -27,6 +27,7 @@ def get_predict():
     else:
         return Response(json.dumps({"error": "Uncorrect data type. Look for json."}))
 
+
 def check_valid_json_format(input_request):
     # TODO: сделать проверку на тип данных, отправлять данные по всем некорректным полям
     expected_keys = {"Pclass": int,
@@ -42,6 +43,7 @@ def check_valid_json_format(input_request):
             return "Not valid json, field: " + key
     return True
 
+
 def prepare_data(input):
     del input['Name']
     input['Sex'] = np.where(input['Sex'] == 'female', 1, 0).item(0)
@@ -49,6 +51,7 @@ def prepare_data(input):
     input['Embarked'] = convert_passenger_embarked(input)
     input['Fare'] = convert_passenger_fare(input)
     return input
+
 
 def convert_passenger_fare(input):
     if input['Fare'] <= 17:
@@ -60,9 +63,11 @@ def convert_passenger_fare(input):
     else:
         return 3
 
+
 def convert_passenger_embarked(input):
     embarked_map = {'S': 0, 'C': 1, 'Q': 2}
     return embarked_map[input['Embarked']]
+
 
 def convert_passenger_age(input):
     if input['Age'] <= 15:
@@ -76,6 +81,7 @@ def convert_passenger_age(input):
     else:
         return 4  # Пожилые
 
+
 def predict(input):
     input = prepare_data(input)
     from_file = CatBoostClassifier()
@@ -84,5 +90,6 @@ def predict(input):
     prediction = model.predict(df)
     return prediction.item(0)
 
-if __name__=="__name__":
+
+if __name__ == "__name__":
     app.run(debug=True)
