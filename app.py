@@ -1,8 +1,11 @@
-import json
-from flask import Flask, request, Response
+from flask import Flask, request, jsonify
 from catboost import CatBoostClassifier
 import pandas as pd
 import numpy as np
+from validate import validate_json
+
+
+CATBOOST_MODEL = CatBoostClassifier().load_model(fname='catboost_model')
 
 
 app = Flask(__name__)
@@ -13,52 +16,28 @@ def index():
     return 'сheck'
 
 
-@app.route(rule='/api/is_passenger_survived', methods=['POST'])
-def get_predict():
-    if request.data:
-        data = request.get_json()
-        checking = check_valid_json_format(data)
-        if checking is True:
-            data = request.get_json()
-            return Response(json.dumps({"name": data["Name"], "status": predict(data)}), status=200, mimetype='application/json')
-        else:
-            return Response(json.dumps({"error": checking}), status=500, mimetype='application/json')
-
-    else:
-        return Response(json.dumps({"error": "Uncorrect data type. Look for json."}))
-
-
-def check_valid_json_format(input_request):
-    # TODO: сделать проверку на тип данных, отправлять данные по всем некорректным полям
-    expected_keys = {"Pclass": int,
-                     "Name": str,
-                     "Sex": str,
-                     "SibSp": int,
-                     "Parch": int,
-                     "Embarked": str,
-                     "Fare": int,
-                     "Age": int}
-    for key, value in expected_keys.items():
-        if key not in input_request or not isinstance(input_request[key], value):
-            return "Not valid json, field: " + key
-    return True
+@app.route(rule='/api/predict', methods=['POST'])
+@validate_json
+def get_predict(*args):
+    data = request.get_json()
+    return jsonify(name=data['name'], status=predict(data)), 200
 
 
 def prepare_data(input):
-    del input['Name']
-    input['Sex'] = np.where(input['Sex'] == 'female', 1, 0).item(0)
-    input['Age'] = convert_passenger_age(input)
-    input['Embarked'] = convert_passenger_embarked(input)
-    input['Fare'] = convert_passenger_fare(input)
-    return input
+    del input['name']
+    input['sex'] = np.where(input['sex'] == 'female', 1, 0).item(0)
+    input['age'] = convert_passenger_age(input)
+    input['embarked'] = convert_passenger_embarked(input)
+    input['fare'] = convert_passenger_fare(input)
+    return format_keys(input)
 
 
 def convert_passenger_fare(input):
-    if input['Fare'] <= 17:
+    if input['fare'] <= 17:
         return 0
-    elif 17 < input['Fare'] <= 30:
+    elif 17 < input['fare'] <= 30:
         return 1
-    elif 30 < input['Fare'] <= 100:
+    elif 30 < input['fare'] <= 100:
         return 2
     else:
         return 3
@@ -66,30 +45,45 @@ def convert_passenger_fare(input):
 
 def convert_passenger_embarked(input):
     embarked_map = {'S': 0, 'C': 1, 'Q': 2}
-    return embarked_map[input['Embarked']]
+    return embarked_map[input['embarked']]
 
 
 def convert_passenger_age(input):
-    if input['Age'] <= 15:
+    if input['age'] <= 15:
         return 0  # Дети
-    elif 15 < input['Age'] <= 25:
+    elif 15 < input['age'] <= 25:
         return 1  # Молодые
-    elif 25 < input['Age'] <= 35:
+    elif 25 < input['age'] <= 35:
         return 2  # Взрослые
-    elif 35 < input['Age'] <= 48:
+    elif 35 < input['age'] <= 48:
         return 3  # Средний возраст
     else:
         return 4  # Пожилые
 
 
+# Приведение ключей к формату модели
+def format_keys(input):
+    mapping = {'pclass': 'Pclass',
+               'sex': 'Sex',
+               'sibsp': 'SibSp',
+               'parch': 'Parch',
+               'embarked': 'Embarked',
+               'fare': 'Fare',
+               'age': 'Age'}
+    for key, value in mapping.items():
+        input[value] = input.pop(key)
+    return input
+
+
 def predict(input):
     input = prepare_data(input)
-    from_file = CatBoostClassifier()
-    model = from_file.load_model(fname='catboost_model')
     df = pd.DataFrame.from_dict([input], orient='columns')
-    prediction = model.predict(df)
+    prediction = CATBOOST_MODEL.predict(df)
     return prediction.item(0)
 
 
-if __name__ == "__name__":
-    app.run(debug=True)
+# @app.after_request
+# def init_model():
+#     global CATBOOST_MODEL
+#     CATBOOST_MODEL = CatBoostClassifier()
+#     CATBOOST_MODEL.load_model(fname='catboost_model')

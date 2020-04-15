@@ -1,4 +1,4 @@
-Запуск gunicorn --bind 0.0.0.0:8000 wsgi:app
+Запуск gunicorn -c config.py app:app
 Пример объекта для теста
 {
                      "Name": "HSGJHG",
