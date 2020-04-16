@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 from validate import validate_json
 
-
 CATBOOST_MODEL = CatBoostClassifier().load_model(fname='catboost_model')
 
 
@@ -17,8 +16,9 @@ def index():
 
 
 @app.route(rule='/api/predict', methods=['POST'])
+# @app.errorhandler(400)
 @validate_json
-def get_predict(*args):
+def get_predict():
     data = request.get_json()
     return jsonify(name=data['name'], status=predict(data)), 200
 
@@ -82,8 +82,6 @@ def predict(input):
     return prediction.item(0)
 
 
-# @app.after_request
-# def init_model():
-#     global CATBOOST_MODEL
-#     CATBOOST_MODEL = CatBoostClassifier()
-#     CATBOOST_MODEL.load_model(fname='catboost_model')
+@app.errorhandler(400)
+def handle_custom_exception(error):
+    return {'message': str(error.description)}, error.code

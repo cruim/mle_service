@@ -1,5 +1,5 @@
-from marshmallow import Schema, fields, validate
-from flask import request
+from marshmallow import Schema, fields, validate, ValidationError
+from flask import request, abort
 
 class CreateNoteInputSchema(Schema):
     pclass = fields.Integer(required=True, validate=validate.Range(min=1, max=3))
@@ -12,9 +12,14 @@ class CreateNoteInputSchema(Schema):
     age = fields.Int(required=True, validate=validate.Range(min=1, max=100))
 
 
+schema = CreateNoteInputSchema()
+
+
 def validate_json(func):
     def wrapper(*args):
-        if CreateNoteInputSchema().validate(request.get_json()):
-            return CreateNoteInputSchema().validate(request.get_json())
+        try:
+            schema.load(request.get_json())
+        except ValidationError as err:
+            abort(400, err)
         return func()
     return wrapper
