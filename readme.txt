@@ -1,12 +1,16 @@
 Запуск gunicorn -c config.py app:app
 Пример объекта для теста
-{
-                     "Name": "HSGJHG",
-                     "Sex": "male",
-                     "SibSp": 1,
-                     "Parch": 2,
-                     "Embarked": "S",
-                     "Fare": 1,
-                     "Age": 56,
- 					"Pclass": 2
- }
+ {
+              "models": ["001","002","003"],
+              "data":
+                            {
+                                          "pclass": "1",
+                                          "name": "Futrelle, Mrs. Jacques Heath (Lily May Peel)",
+                                          "sex": "male",
+                                          "sibsp": "1",
+                                          "parch": "0",
+                                          "embarked": "S",
+                                          "fare": "53",
+                                          "age": "25"
+                            }
+}

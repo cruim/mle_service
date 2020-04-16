@@ -1,10 +1,14 @@
 from flask import Flask, request, jsonify
 from catboost import CatBoostClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+import pickle
 import pandas as pd
 import numpy as np
 from validate import validate_json
 
+
 CATBOOST_MODEL = CatBoostClassifier().load_model(fname='catboost_model')
+GRADIENT_BOOSTING_CLASSIFIER_MODEL = pickle.load(open("gradient_boosting_classifier_model.dat", "rb"))
 
 
 app = Flask(__name__)
@@ -16,11 +20,10 @@ def index():
 
 
 @app.route(rule='/api/predict', methods=['POST'])
-# @app.errorhandler(400)
 @validate_json
 def get_predict():
     data = request.get_json()
-    return jsonify(name=data['name'], status=predict(data)), 200
+    return jsonify(result=predict(data)), 200
 
 
 def prepare_data(input):
@@ -33,11 +36,12 @@ def prepare_data(input):
 
 
 def convert_passenger_fare(input):
-    if input['fare'] <= 17:
+    fare = int(input['fare'])
+    if fare <= 17:
         return 0
-    elif 17 < input['fare'] <= 30:
+    elif 17 < fare <= 30:
         return 1
-    elif 30 < input['fare'] <= 100:
+    elif 30 < fare <= 100:
         return 2
     else:
         return 3
@@ -49,13 +53,14 @@ def convert_passenger_embarked(input):
 
 
 def convert_passenger_age(input):
-    if input['age'] <= 15:
+    age = int(input['age'])
+    if age <= 15:
         return 0  # Дети
-    elif 15 < input['age'] <= 25:
+    elif 15 < age <= 25:
         return 1  # Молодые
-    elif 25 < input['age'] <= 35:
+    elif 25 < age <= 35:
         return 2  # Взрослые
-    elif 35 < input['age'] <= 48:
+    elif 35 < age <= 48:
         return 3  # Средний возраст
     else:
         return 4  # Пожилые
@@ -76,12 +81,18 @@ def format_keys(input):
 
 
 def predict(input):
-    input = prepare_data(input)
-    df = pd.DataFrame.from_dict([input], orient='columns')
-    prediction = CATBOOST_MODEL.predict(df)
-    return prediction.item(0)
+    result = []
+    mapping = {"001": CATBOOST_MODEL, "002": GRADIENT_BOOSTING_CLASSIFIER_MODEL}
+    df = pd.DataFrame.from_dict([prepare_data(input['data'])], orient='columns')
+    for mod in input['models']:
+        model = mapping.get(mod, False)
+        if model:
+            result.append({"model_id": mod, "value": model.predict(df).item(0), "result_code": 0})
+        else:
+            result.append({"model_id": mod, "error": "Model not found", "result_code": 1})
+    return result
 
 
 @app.errorhandler(400)
 def handle_custom_exception(error):
-    return {'message': str(error.description)}, error.code
+    return jsonify(message=str(error.description)), error.code
