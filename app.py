@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 from catboost import CatBoostClassifier
-from sklearn.ensemble import GradientBoostingClassifier
 import pickle
 import pandas as pd
 import numpy as np
