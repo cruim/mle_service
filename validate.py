@@ -45,6 +45,7 @@ class SchemaView(SwaggerView):
             "type": "dict",
             "required": True,
             "description": 'An object like ',
+            "schema": NestedSchema
         }
     ]
     responses = {
