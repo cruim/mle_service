@@ -1,24 +1,32 @@
 from flask import Flask, request, jsonify
+from flasgger import Flasgger
 from catboost import CatBoostClassifier
 import pickle
 import pandas as pd
 import numpy as np
-from validate import validate_json
+from validate import validate_json, SchemaView
 
 
 CATBOOST_MODEL = CatBoostClassifier().load_model(fname='catboost_model')
 GRADIENT_BOOSTING_CLASSIFIER_MODEL = pickle.load(open("gradient_boosting_classifier_model.dat", "rb"))
+MODEL_MAPPING = {"001": CATBOOST_MODEL, "002": GRADIENT_BOOSTING_CLASSIFIER_MODEL}
 
 
 app = Flask(__name__)
 
+swagger = Flasgger(app)
+
+app.add_url_rule('/api/<predict>',
+    view_func=SchemaView.as_view('test'),
+    methods=['POST'])
+
 
 @app.route(rule='/', methods=['GET'])
 def index():
-    return 'сheck'
+    return 'сheck', 200
 
 
-@app.route(rule='/api/predict', methods=['POST'])
+@app.route(rule='/api/predict/', methods=['POST'])
 @validate_json
 def get_predict():
     data = request.get_json()
@@ -81,10 +89,9 @@ def format_keys(input):
 
 def predict(input):
     result = []
-    mapping = {"001": CATBOOST_MODEL, "002": GRADIENT_BOOSTING_CLASSIFIER_MODEL}
     df = pd.DataFrame.from_dict([prepare_data(input['data'])], orient='columns')
     for mod in input['models']:
-        model = mapping.get(mod, False)
+        model = MODEL_MAPPING.get(mod, False)
         if model:
             result.append({"model_id": mod, "value": model.predict(df).item(0), "result_code": 0})
         else:
