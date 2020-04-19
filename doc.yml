@@ -1,0 +1,96 @@
+parameters:
+  - name: models
+    in: body
+    id: Models
+    schema:
+      type: array
+      items:
+        type: string
+      example: ['001', '002']
+    required: true
+  - name: data
+    in: body
+    required: true
+    schema:
+      id: NestedSchema
+      required:
+        - pclass
+        - name
+        - sex
+        - sibsp
+        - parch
+        - embarked
+        - fare
+        - age
+      properties:
+        pclass:
+          type: integer
+          description: Pclass
+          enum: [1, 2, 3]
+        name:
+          type: string
+          description: Passenger name
+        sex:
+          type: string
+          description: Passenger sex
+          enum: ['male', 'female']
+        sibsp:
+          type: integer
+          description: Number of Siblings/Spouses
+        parch:
+          type: integer
+          description: Number of Parents/Children
+        embarked:
+          type: string
+          description: Port
+          enum: ['S', 'C', 'Q']
+        fare:
+          description: Ticket cost
+          type: integer
+          minimum: 1
+          maximum: 200
+        age:
+          description: Passenger age
+          type: integer
+          minimum: 1
+          maximum: 100
+
+
+
+responses:
+  200:
+    description: OK
+    schema:
+      $ref: '#/definitions/ArrayOfEachModelResult'
+
+  400:
+    description: BAD REQUEST
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "{'data': {'embarked': ['One or more of the choices you made was not in: S, C, Q.']}}"
+          description: The user ID.
+
+definitions:
+  ArrayOfEachModelResult:
+    type: array
+    items:
+      $ref: '#/definitions/ResponceExample'
+  ResponceExample:
+    type: object
+    properties:
+      model_id:
+        type: string
+        example: '001'
+      result_code:
+        type: integer
+        example: 0
+      value:
+        type: integer
+        example: 1
+    required:
+      - id
+      - title
+      - value

@@ -4,7 +4,8 @@ from catboost import CatBoostClassifier
 import pickle
 import pandas as pd
 import numpy as np
-from validate import validate_json, SchemaView
+from validate import validate_json
+from flasgger import swag_from
 
 
 CATBOOST_MODEL = CatBoostClassifier().load_model(fname='catboost_model')
@@ -16,10 +17,6 @@ app = Flask(__name__)
 
 swagger = Flasgger(app)
 
-app.add_url_rule('/api/<predict>',
-    view_func=SchemaView.as_view('test'),
-    methods=['POST'])
-
 
 @app.route(rule='/', methods=['GET'])
 def index():
@@ -27,6 +24,7 @@ def index():
 
 
 @app.route(rule='/api/predict/', methods=['POST'])
+@swag_from('doc.yml')
 @validate_json
 def get_predict():
     data = request.get_json()

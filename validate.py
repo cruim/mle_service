@@ -1,7 +1,5 @@
 from marshmallow import Schema, fields, validate, ValidationError
 from flask import request, abort
-from flasgger import SwaggerView
-
 
 
 class NestedSchema(Schema):
@@ -18,46 +16,6 @@ class NestedSchema(Schema):
 class ModelSchema(Schema):
     models = fields.List(fields.String(), required=True, validate=validate.Length(min=1))
     data = fields.Nested(NestedSchema)
-
-
-class ResponceNestedSchema(Schema):
-    model_id = fields.String(required=True)
-    result_code = fields.Integer(required=True, validate=validate.ContainsOnly([0, 1]))
-    value = fields.Integer(required=True, validate=validate.ContainsOnly([0, 1]))
-
-
-class ResponceSchema(Schema):
-    result = fields.List(fields.Nested(ResponceNestedSchema))
-
-
-class SchemaView(SwaggerView):
-    parameters = [
-        {
-            "name": "models",
-            "type": "list",
-            "required": True,
-            "description": "List of models, like ['001','002','003']",
-            "schema": ModelSchema
-        },
-        {
-            "name": "data",
-            "in": "path",
-            "type": "dict",
-            "required": True,
-            "description": 'An object like ',
-            "schema": NestedSchema
-        }
-    ]
-    responses = {
-        200: {
-            "description": "A list of predictions for each model",
-            "schema": ResponceSchema
-        },
-
-        400: {
-            "description": "Validation error."
-        }
-    }
 
 
 schema = ModelSchema()
