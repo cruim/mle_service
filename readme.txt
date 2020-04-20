@@ -14,3 +14,7 @@
                                           "age": "25"
                             }
 }
+
+Запуск тестов: nose2 -v tests.test_basic
+Статистика: nose2 --with-coverage
+Нет теста на встроенный метод errorhandler

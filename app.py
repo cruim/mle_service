@@ -20,7 +20,7 @@ swagger = Flasgger(app)
 
 @app.route(rule='/', methods=['GET'])
 def index():
-    return 'сheck', 200
+    return jsonify(result='check', status=200)
 
 
 @app.route(rule='/api/predict/', methods=['POST'])
@@ -31,7 +31,7 @@ def get_predict():
     return jsonify(result=predict(data)), 200
 
 
-def prepare_data(input):
+def prepare_data(input: dict) -> dict:
     del input['name']
     input['sex'] = np.where(input['sex'] == 'female', 1, 0).item(0)
     input['age'] = convert_passenger_age(input)
@@ -40,7 +40,7 @@ def prepare_data(input):
     return format_keys(input)
 
 
-def convert_passenger_fare(input):
+def convert_passenger_fare(input: dict) -> int:
     fare = int(input['fare'])
     if fare <= 17:
         return 0
@@ -52,12 +52,12 @@ def convert_passenger_fare(input):
         return 3
 
 
-def convert_passenger_embarked(input):
+def convert_passenger_embarked(input: dict) -> int:
     embarked_map = {'S': 0, 'C': 1, 'Q': 2}
     return embarked_map[input['embarked']]
 
 
-def convert_passenger_age(input):
+def convert_passenger_age(input: dict) -> int:
     age = int(input['age'])
     if age <= 15:
         return 0  # Дети
@@ -72,7 +72,7 @@ def convert_passenger_age(input):
 
 
 # Приведение ключей к формату модели
-def format_keys(input):
+def format_keys(input: dict) -> dict:
     mapping = {'pclass': 'Pclass',
                'sex': 'Sex',
                'sibsp': 'SibSp',
@@ -85,7 +85,7 @@ def format_keys(input):
     return input
 
 
-def predict(input):
+def predict(input: dict) -> list:
     result = []
     df = pd.DataFrame.from_dict([prepare_data(input['data'])], orient='columns')
     for mod in input['models']:
@@ -99,4 +99,5 @@ def predict(input):
 
 @app.errorhandler(400)
 def handle_custom_exception(error):
+    print(error, type(error), error.description)
     return jsonify(message=str(error.description)), error.code
