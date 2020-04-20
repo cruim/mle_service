@@ -1,60 +1,72 @@
 parameters:
-  - name: models
-    in: body
-    id: Models
-    schema:
-      type: array
-      items:
-        type: string
-      example: ['001', '002']
-    required: true
-  - name: data
+  - name: body
     in: body
     required: true
     schema:
-      id: NestedSchema
+      id: ModelSchema
       required:
-        - pclass
-        - name
-        - sex
-        - sibsp
-        - parch
-        - embarked
-        - fare
-        - age
+        - models
+        - data
       properties:
-        pclass:
-          type: integer
-          description: Pclass
-          enum: [1, 2, 3]
-        name:
-          type: string
-          description: Passenger name
-        sex:
-          type: string
-          description: Passenger sex
-          enum: ['male', 'female']
-        sibsp:
-          type: integer
-          description: Number of Siblings/Spouses
-        parch:
-          type: integer
-          description: Number of Parents/Children
-        embarked:
-          type: string
-          description: Port
-          enum: ['S', 'C', 'Q']
-        fare:
-          description: Ticket cost
-          type: integer
-          minimum: 1
-          maximum: 200
-        age:
-          description: Passenger age
-          type: integer
-          minimum: 1
-          maximum: 100
-
+        models:
+          type: array
+          description: List of models
+          items:
+            type: string
+          example: ['001', '002']
+        data:
+          type: object
+          schema:
+            id: NestedSchema
+            required:
+              - pclass
+              - name
+              - sex
+              - sibsp
+              - parch
+              - embarked
+              - fare
+              - age
+            properties:
+              pclass:
+                type: integer
+                description: Pclass
+                enum: [1, 2, 3]
+                example: 1
+              name:
+                type: string
+                description: Passenger name
+                example: 'Test'
+              sex:
+                type: string
+                description: Passenger sex
+                enum: ['male', 'female']
+                example: 'male'
+              sibsp:
+                type: integer
+                description: Number of Siblings/Spouses
+                example: 1
+              parch:
+                type: integer
+                description: Number of Parents/Children
+                example: 1
+              embarked:
+                type: string
+                description: Port
+                enum: ['S', 'C', 'Q']
+                example: 'S'
+              fare:
+                description: Ticket cost
+                type: integer
+                minimum: 1
+                maximum: 200
+                example: 100
+              age:
+                description: Passenger age
+                type: integer
+                minimum: 1
+                maximum: 100
+                example: 42
 
 
 responses:
