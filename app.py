@@ -6,11 +6,15 @@ import pandas as pd
 import numpy as np
 from validate import validate_json
 from flasgger import swag_from
+from pytorch_model import Net
+import torch
+from torch.autograd import Variable
 
 
 CATBOOST_MODEL = CatBoostClassifier().load_model(fname='catboost_model')
 GRADIENT_BOOSTING_CLASSIFIER_MODEL = pickle.load(open("gradient_boosting_classifier_model.dat", "rb"))
-MODEL_MAPPING = {"001": CATBOOST_MODEL, "002": GRADIENT_BOOSTING_CLASSIFIER_MODEL}
+PYTORCH_MODEL = Net()
+MODEL_MAPPING = {"001": CATBOOST_MODEL, "002": GRADIENT_BOOSTING_CLASSIFIER_MODEL, "003": PYTORCH_MODEL}
 
 
 app = Flask(__name__)
@@ -20,7 +24,7 @@ swagger = Flasgger(app)
 
 @app.route(rule='/', methods=['GET'])
 def index():
-    return jsonify(result='check', status=200)
+    return jsonify(result='check42', status=200)
 
 
 @app.route(rule='/api/predict/', methods=['POST'])
@@ -90,7 +94,14 @@ def predict(input: dict) -> list:
     df = pd.DataFrame.from_dict([prepare_data(input['data'])], orient='columns')
     for mod in input['models']:
         model = MODEL_MAPPING.get(mod, False)
-        if model:
+        if model and mod == '003':
+            model.load_state_dict(torch.load('torch.pth'))
+            X_test = df.iloc[:, :].values
+            with torch.no_grad():
+                t_ = model(Variable(torch.FloatTensor(X_test.astype(int)), requires_grad=False))
+                value = torch.max(t_, 0)
+                result.append({"model_id": mod, "value": value[1].data.numpy().item(0), "result_code": 0})
+        elif model:
             result.append({"model_id": mod, "value": model.predict(df).item(0), "result_code": 0})
         else:
             result.append({"model_id": mod, "error": "Model not found", "result_code": 1})
